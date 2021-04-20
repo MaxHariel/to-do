@@ -5,12 +5,17 @@ import { Button } from '@chakra-ui/button'
 import Cookies from 'js-cookie'
 import { addMinutes } from 'date-fns'
 import { useRouter } from 'next/router'
+import axios from '../requestor/axios'
 
 const SignIn: NextPage = () => {
     const route = useRouter()
-    const signIn = () => {
-        Cookies.set('token', 'token-jwt', {
-            expires: addMinutes(new Date(), 1)
+    const signIn = async () => {
+        const token = await axios.post('/auth', {
+            password: '123456',
+            identification: 'maxi@gmail.com'
+        })
+        Cookies.set('token', token.data.access_token, {
+            expires: addMinutes(new Date(), 60)
         })
         route.replace('/')
     }
