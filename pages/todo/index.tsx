@@ -1,23 +1,65 @@
 import { Button } from '@chakra-ui/button'
 import { Input } from '@chakra-ui/input'
+import jwt_decoder from 'jwt-decode'
 import { Container, Flex, GridItem, SimpleGrid } from '@chakra-ui/layout'
 import { Table, Tbody, Td, Tr } from '@chakra-ui/table'
 import { NextPage } from 'next'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Cookies from 'js-cookie'
+import axios from '../../requestor/axios'
+import withAuth from '../../utils/WithAuth'
+import useSWR, { mutate } from 'swr'
+
+interface IUser {
+    id: string
+}
+
+interface ITask {
+    name: string
+    status: string
+    user: IUser
+}
 
 const Index: NextPage = () => {
-    const [tableData, setTableData] = useState([
-        { task: 'Nova tarefa' },
-        { task: 'Nova tarefa 2' }
-    ])
+    const [tableData, setTableData] = useState([])
     const [inputTask, setInputTask] = useState('')
+    const [userId, setUserId] = useState('')
+    const [taskForm, setTaskForm] = useState({})
 
-    const addTask = () => {
-        const arr = [...tableData]
-        const task = { task: inputTask }
-        arr.push(task)
-        setTableData(arr)
+    const config = {
+        Authorization: `Bearer ${Cookies.get('token')}`
+    }
+
+    const fetcher = url =>
+        axios.get(url, { headers: config }).then(res => res.data)
+
+    const { data, error } = useSWR('/users', fetcher)
+
+    useEffect(() => {
+        if (Cookies.get('token')) {
+            const payload: IUser = jwt_decoder(Cookies.get('token'))
+            setUserId(payload.id)
+        }
+    }, [userId])
+
+    const addTask = async () => {
+        const task: ITask = {
+            name: inputTask,
+            status: 'not_done',
+            user: {
+                id: userId
+            }
+        }
+        let tasks = [...data.tasks]
+        tasks.push(task)
+        mutate('/users', { ...data, tasks }, false)
+
+        axios.post('/task', task, {
+            headers: config
+        })
+
         setInputTask('')
+        // mutate('/users')
     }
 
     return (
@@ -39,12 +81,17 @@ const Index: NextPage = () => {
                     </Flex>
                     <Table variant="simple">
                         <Tbody>
-                            {tableData.map(todo => (
-                                <Tr>
-                                    <Td>{todo.task}</Td>
-                                    <Td>Buttons</Td>
-                                </Tr>
-                            ))}
+                            {error ? (
+                                <div>Error</div>
+                            ) : (
+                                data &&
+                                data.tasks.map(task => (
+                                    <Tr>
+                                        <Td>{task.name}</Td>
+                                        <Td>Buttons</Td>
+                                    </Tr>
+                                ))
+                            )}
                         </Tbody>
                     </Table>
                 </GridItem>
@@ -53,4 +100,4 @@ const Index: NextPage = () => {
     )
 }
 
-export default Index
+export default withAuth(Index)

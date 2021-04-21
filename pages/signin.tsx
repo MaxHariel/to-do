@@ -12,12 +12,12 @@ const SignIn: NextPage = () => {
     const signIn = async () => {
         const token = await axios.post('/auth', {
             password: '123456',
-            identification: 'maxi@gmail.com'
+            identification: 'user@gmail.com'
         })
         Cookies.set('token', token.data.access_token, {
             expires: addMinutes(new Date(), 60)
         })
-        route.replace('/')
+        route.replace('/todo')
     }
     const signOut = () => {
         Cookies.remove('token')
