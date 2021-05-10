@@ -12,7 +12,7 @@ const SignIn: NextPage = () => {
     const signIn = async () => {
         const token = await axios.post('/auth', {
             password: '123456',
-            identification: 'user@gmail.com'
+            identification: 'maxi@gmail.com'
         })
         Cookies.set('token', token.data.access_token, {
             expires: addMinutes(new Date(), 60)
